@@ -3,7 +3,7 @@
 Client-Server communication protocol contains only 1 request.
 
 
-##Request 1
+## Request 1
 
 Request:
 ```json
@@ -32,7 +32,7 @@ Fail Response:
   "failureReason": "user or password is not valid"
 }
 ```
-###Request 2:
+### Request 2:
 
 get the file
 
