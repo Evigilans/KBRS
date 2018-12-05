@@ -94,7 +94,7 @@ public class Client {
         return privateKey != null && publicKey != null;
     }
 
-    private Map<String, Object> sendRequest(final Map<String, Object> payload)  {
+    private static Map<String, Object> sendRequest(final Map<String, Object> payload)  {
         DataOutputStream outputStream = null;
         DataInputStream dataInputStream = null;
         Socket socket = null;
@@ -179,7 +179,8 @@ public class Client {
         }
         System.out.println("Requesting file " + requestedFile);
 
-        System.out.println(createHelloRequestPayload(requestedFile));
+        Map<String, Object> helloPayload = createHelloRequestPayload(requestedFile);
+        Map<String, Object> response = sendRequest(helloPayload);
 
     }
 
