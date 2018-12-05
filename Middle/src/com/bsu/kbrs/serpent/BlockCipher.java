@@ -1,20 +1,19 @@
 package com.bsu.kbrs.serpent;
 
 public interface BlockCipher {
-
     /**
      * Returns this block cipher's block size in bytes.
      *
      * @return Block size.
      */
-    public int blockSize();
+    int blockSize();
 
     /**
      * Returns this block cipher's key size in bytes.
      *
      * @return Key size.
      */
-    public int keySize();
+    int keySize();
 
     /**
      * Set the key for this block cipher. <TT>key</TT> must be an array of bytes
@@ -22,8 +21,7 @@ public interface BlockCipher {
      *
      * @param key Key.
      */
-    public void setKey
-    (byte[] key);
+    void setKey(byte[] key);
 
     /**
      * Encrypt the given plaintext. <TT>text</TT> must be an array of bytes
@@ -34,7 +32,5 @@ public interface BlockCipher {
      *
      * @param text Plaintext (on input), ciphertext (on output).
      */
-    public void encrypt
-    (byte[] text);
-
+    void encrypt(byte[] text);
 }

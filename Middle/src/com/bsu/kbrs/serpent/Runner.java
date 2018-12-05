@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.Arrays;
 
 public class Runner {
+    private static final int KEY_LENGTH = 16;
     private static String secureKey;
 
     public static void testDecrypt() throws IOException {
@@ -98,9 +99,18 @@ public class Runner {
     public static void main(String[] args) {
         Serpent serpent = new Serpent();
         try {
-            testEncrypt();
-            testDecrypt();
-        } catch (IOException e) {
+            String secureKey = ApplicationUtils.generateRandomKey(KEY_LENGTH);
+
+            FileEncryptor fileEncryptor = new FileEncryptor();
+            ByteDecryptor byteDecryptor = new ByteDecryptor();
+
+            byte[] encryptedBytes = fileEncryptor.encryptFile("data/input.txt", secureKey);
+            //System.out.println(Arrays.toString(encryptedBytes));
+
+            System.out.println(byteDecryptor.decryptBytes(encryptedBytes, secureKey));
+            //testEncrypt();
+            //testDecrypt();
+        } catch (Exception e) {
             System.err.println(e.getMessage());
         }
     }
