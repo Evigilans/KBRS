@@ -19,7 +19,8 @@ Successful Response:
 {
   "type": "auth",
   "status": "OK",
-  "encryption_key": "yyyy"
+  "encryption_key": "yyyy",
+  "sessionId": "zzzz"
 }
 ```
 "encryption_key" is a session key encrypted with rsa public key
@@ -40,7 +41,8 @@ Client Request:
 ```json
 {
     "type": "getFile",
-    "fileName": "xyz.txt"
+    "fileName": "xyz.txt",
+    "sessionId": "zzzz"
 }
 ```
 
