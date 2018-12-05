@@ -1,0 +1,3 @@
+Cipher block chaining is a mode of operation for a block cipher
+
+‚> šÉ—ãn„xà
