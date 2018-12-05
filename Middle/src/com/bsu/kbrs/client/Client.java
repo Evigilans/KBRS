@@ -3,12 +3,19 @@ package com.bsu.kbrs.client;
 
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
+import com.bsu.kbrs.utils.MessageUtils;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 public class Client {
 
@@ -22,14 +29,17 @@ public class Client {
             "java -jar client.jar [HOSTNAME][:PORT]\n" +
             "defaults:\n" +
             "HOSTNAME - localhost\n" +
-            "PORT - TBD";
+            "PORT - 9090";
+
+    private static RSAKey privateKey;
+    private static RSAKey publicKey;
+
+    private static String hostname;
+    private static String port;
 
     private static Path getRsaKeyDirectory() {
         return Paths.get(System.getProperty("user.home"), ".rsa_keys_secret");
     }
-
-    private static RSAKey privateKey;
-    private static RSAKey publicKey;
 
     private static void generateNewKeys() {
         RSAGenerator rsaGenerator = new RSAGenerator();
@@ -84,20 +94,92 @@ public class Client {
         return privateKey != null && publicKey != null;
     }
 
+    private Map<String, Object> sendRequest(final Map<String, Object> payload)  {
+        DataOutputStream outputStream = null;
+        DataInputStream dataInputStream = null;
+        Socket socket = null;
+        try {
+            socket = new Socket(hostname, Integer.parseInt(port));
+            socket.setSoTimeout(5000);
+            outputStream = new DataOutputStream(socket.getOutputStream());
+            MessageUtils.sendMessage(outputStream, payload);
+
+            dataInputStream = new DataInputStream(socket.getInputStream());
+            return MessageUtils.readMessage(dataInputStream);
+        } catch (IOException e){
+            e.printStackTrace();
+        } finally {
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+                if (dataInputStream != null) {
+                    dataInputStream.close();
+                }
+                if (socket != null && !socket.isClosed()) {
+                    socket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
+    }
+
+    private static Map<String, Object> createHelloRequestPayload(final String fileName) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "hello");
+        request.put("rsa-key", publicKey.toString());
+        request.put("fileName", fileName);
+
+        return request;
+    }
+
     public static void main(String[] args) {
         if (args.length > 0 && (args[0].equals("--help") || args[0].equals("-h"))) {
             System.out.println(USAGE);
         }
 
-        final boolean isNewKeyPram = args.length > 0 &&
-                (args[0].equalsIgnoreCase(NEW_KEYS_PARAM) ||
-                args[args.length - 1].equalsIgnoreCase(NEW_KEYS_PARAM));
-        
+        boolean isNewKeyPram = false;
+        String hostNamePort = "localhost:9090";
+        if (args.length > 0) {
+            if (args[0].equals(NEW_KEYS_PARAM)) {
+                isNewKeyPram = true;
+                if (args.length > 1) {
+                    hostNamePort = args[1];
+                }
+            } else {
+                hostNamePort = args[0];
+            }
+
+            if (args[args.length-1].equals(NEW_KEYS_PARAM)) {
+                isNewKeyPram = true;
+            }
+        }
+        if (hostNamePort.contains(":")) {
+            String[] pair = hostNamePort.split(":");
+            hostname = pair[0];
+            port = pair[1];
+        } else {
+            hostname = hostNamePort;
+            port = "9090";
+        }
+
+
         if (!readUpKeys() || isNewKeyPram) {
             generateNewKeys();
         }
 
-        System.out.println(privateKey);
+        String requestedFile = null;
+        System.out.println("Please enter requestedFile");
+        Scanner scanner = new Scanner(System.in);
+        while (requestedFile == null) {
+            requestedFile = scanner.nextLine();
+        }
+        System.out.println("Requesting file " + requestedFile);
+
+        System.out.println(createHelloRequestPayload(requestedFile));
 
     }
 
