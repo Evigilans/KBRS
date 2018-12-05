@@ -2,13 +2,44 @@
 
 Client-Server communication protocol contains only 1 request.
 
-Sample:
+
+##Request 1
+
+Request:
+```json
+{
+  "type": "auth",
+  "user": "user1",
+  "rsa-key": "xxxx"
+}
+```
+
+Successful Response:
+```json
+{
+  "type": "auth",
+  "status": "OK",
+  "encryption_key": "yyyy"
+}
+```
+"encryption_key" is a session key encrypted with rsa public key
+ 
+Fail Response:
+```json
+{
+  "type": "auth",
+  "status": "FAIL",
+  "failureReason": "user or password is not valid"
+}
+```
+###Request 2:
+
+get the file
 
 Client Request:
 ```json
 {
-    "type": "hello",
-    "rsa-key": "xxxx",
+    "type": "getFile",
     "fileName": "xyz.txt"
 }
 ```
@@ -16,17 +47,17 @@ Client Request:
 Successful Response:
 ```json
 {
-    "type": "hello",
+    "type": "getFile",
     "status": "OK",
-    "content": "%encrypted_file%",
-    "encrypted_key": "bla-bla"
+    "content": "%encrypted_file%"
 }
 ```
+"content" is encrypted using AES session key.
 
 File not found response
 ```json
 {
-    "type": "hello",
+    "type": "getFile",
     "status": "FAIL",
     "failureReason": "File not found"
 }
