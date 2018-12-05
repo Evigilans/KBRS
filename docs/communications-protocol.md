@@ -13,11 +13,21 @@ Client Request:
 }
 ```
 
-Response:
+Successful Response:
 ```json
 {
     "type": "hello",
+    "status": "OK",
     "content": "%encrypted_file%",
     "encrypted_key": "bla-bla"
+}
+```
+
+File not found response
+```json
+{
+    "type": "hello",
+    "status": "FAIL",
+    "failureReason": "File not found"
 }
 ```
