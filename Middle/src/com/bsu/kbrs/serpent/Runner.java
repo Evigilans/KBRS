@@ -1,11 +1,14 @@
 package com.bsu.kbrs.serpent;
 
+import com.bsu.kbrs.util.ApplicationUtils;
 import edu.rit.util.Packing;
 
 import java.io.*;
 import java.util.Arrays;
 
 public class Runner {
+    private static String secureKey;
+
     public static void testDecrypt() throws IOException {
         Serpent serpent = new Serpent();
         File file_in = new File("data/output.txt");
@@ -14,7 +17,7 @@ public class Runner {
         in_stream.readFully(fileData);
         in_stream.close();
 
-        byte[] key = "3453fssf4".getBytes();
+        byte[] key = secureKey.getBytes();
         //set key
         serpent.setKey(key);
 
@@ -56,7 +59,9 @@ public class Runner {
         in_stream.readFully(fileData);
         in_stream.close();
 
-        byte[] key = "3453fssf4".getBytes();
+        secureKey = ApplicationUtils.generateRandomKey(16);
+        System.out.println("Secret key: " + secureKey);
+        byte[] key = secureKey.getBytes();
         //set key
         serpent.setKey(key);
         //setup file writing
@@ -69,6 +74,7 @@ public class Runner {
 
         System.out.println(fileData.length);
 
+        fileData = ApplicationUtils.appendFileWithSpaces(fileData);
         for (int i = 0; i < fileData.length; i += 16) {
             byte[] block = new byte[]{
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
