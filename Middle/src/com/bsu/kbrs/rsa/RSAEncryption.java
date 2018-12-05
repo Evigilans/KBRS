@@ -17,23 +17,25 @@ public class RSAEncryption {
 
     /**
      * Method used to encrypt a message string
+     *
      * @param msg Message string to be encrypted
      * @return BigInteger value of encrypted message
      */
-    public BigInteger encrypt(String msg){
+    public BigInteger encrypt(String msg) {
         return (new BigInteger(msg.getBytes())).modPow(publicKey.getComponent(), publicKey.getModulus());
     }
 
     /**
      * Method used to decrypt a message
+     *
      * @param encrypt_msg Encrypted message as a BigInteger
      * @return BigInteger value of decrypted string
      */
-    public String decrypt(BigInteger encrypt_msg){
+    public String decrypt(BigInteger encrypt_msg) {
         BigInteger result = encrypt_msg.modPow(privateKey.getComponent(), privateKey.getModulus());
         StringBuilder decrypted = new StringBuilder();
         //BigInteger must be converted to a byte array in order to rebuild the original message
-        for(byte b : result.toByteArray()){
+        for (byte b : result.toByteArray()) {
             decrypted.append((char) b);
         }
 

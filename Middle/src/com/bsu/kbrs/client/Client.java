@@ -1,6 +1,5 @@
 package com.bsu.kbrs.client;
 
-
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.utils.MessageUtils;
@@ -21,7 +20,7 @@ public class Client {
 
     private static final String NEW_KEYS_PARAM = "--new-keys";
     private static final String PUBLIC_KEY_FILE_NAME = "public";
-    private static final String PRIVATE_KEY_FILE_NAME = "public";
+    private static final String PRIVATE_KEY_FILE_NAME = "private";
 
     private static String USAGE = "Client options: \n" +
             NEW_KEYS_PARAM + " - generates a new pair of rsa keys\n" +
@@ -94,7 +93,7 @@ public class Client {
         return privateKey != null && publicKey != null;
     }
 
-    private static Map<String, Object> sendRequest(final Map<String, Object> payload)  {
+    private static Map<String, Object> sendRequest(final Map<String, Object> payload) {
         DataOutputStream outputStream = null;
         DataInputStream dataInputStream = null;
         Socket socket = null;
@@ -106,7 +105,7 @@ public class Client {
 
             dataInputStream = new DataInputStream(socket.getInputStream());
             return MessageUtils.readMessage(dataInputStream);
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
@@ -153,7 +152,7 @@ public class Client {
                 hostNamePort = args[0];
             }
 
-            if (args[args.length-1].equals(NEW_KEYS_PARAM)) {
+            if (args[args.length - 1].equals(NEW_KEYS_PARAM)) {
                 isNewKeyPram = true;
             }
         }

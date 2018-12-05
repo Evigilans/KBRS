@@ -16,12 +16,11 @@ public class RSAGenerator {
     /**
      * Object Constructor
      */
-    public RSAGenerator(){
+    public RSAGenerator() {
 
     }
 
     /**
-     *
      * @param numbits Bit Length used to generate the various components
      */
     public void generate(int numbits) {
@@ -42,8 +41,8 @@ public class RSAGenerator {
         //Calculate private exponent
         d = e.modInverse(phiN);
         //Set Keys
-        publicKey = new RSAKey(e,n);
-        privateKey = new RSAKey(d,n);
+        publicKey = new RSAKey(e, n);
+        privateKey = new RSAKey(d, n);
     }
 
 

@@ -6,7 +6,6 @@ import edu.rit.util.Packing;
 import java.io.*;
 
 public class FileEncryptor {
-    private static final int KEY_LENGTH = 16;
     private static final int BLOCK_SIZE = 16;
 
     private Serpent serpent = new Serpent();
