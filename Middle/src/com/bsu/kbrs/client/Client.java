@@ -198,19 +198,18 @@ public class Client {
 
             if (response != null) {
                 final String status = (String) response.get("status");
-                final String encryptedKey = (String) response.get("encryption_key");
 
-                final String sessionId = login + "/" + encryptedKey.chars()
-                        .limit(16)
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString();
 
                 if (status != null && status.equals("OK")) {
+                    final String encryptedKey = (String) response.get("encryption_key");
+
+                    final String sessionId = login + "/" + encryptedKey.substring(0, 16);
                     while (true) {
                         String requestedFile = scanner.next();
                         System.out.println("Requesting file " + requestedFile);
                         Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
-                        sendRequest(getFilePayload);
+                        Map<String, Object> getFileResponse = sendRequest(getFilePayload);
+                        System.out.println(MessageUtils.getGson().toJson(getFileResponse));
                     }
                 } else {
                     String failureReason = (String) response.get("failureReason");
