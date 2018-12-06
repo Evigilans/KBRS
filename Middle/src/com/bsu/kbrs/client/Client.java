@@ -1,5 +1,7 @@
 package com.bsu.kbrs.client;
 
+import com.bsu.kbrs.constant.FieldConstant;
+import com.bsu.kbrs.constant.SystemConfigurationConstant;
 import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
@@ -185,7 +187,7 @@ public class Client {
         }
 
         boolean isNewKeyPram = false;
-        String hostNamePort = "localhost:9090";
+        String hostNamePort = "localhost:" + SystemConfigurationConstant.SOCKET_PORT;
         if (args.length > 0) {
             if (args[0].equals(NEW_KEYS_PARAM)) {
                 isNewKeyPram = true;
@@ -237,7 +239,7 @@ public class Client {
         Map<String, Object> response = sendRequest(helloPayload);
 
         if (response != null) {
-            String status = (String) response.get("status");
+            String status = (String) response.get(FieldConstant.JSON_STATUS);
 
             final String failure = (String) response.get("failureReason");
             if (status != null && status.equals("FAIL")
