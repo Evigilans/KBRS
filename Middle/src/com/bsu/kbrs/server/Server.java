@@ -64,7 +64,7 @@ public class Server {
                 RSAEncryption rsaEncryption = new RSAEncryption();
                 rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
 
-                String secureKey = ApplicationUtils.generateRandomKey(32);
+                String secureKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
                 response.put(STATUS, STATUS_OK);
@@ -74,8 +74,8 @@ public class Server {
                 updateData.put(PASSWORD, password);
                 updateData.put(SECURE_KEY, secureKey);
                 updateData.put(RSA_KEY, rsaEncryption.getPublicKey().toString());
-                updateData.put(SESSION_ID, user + SLASH + enrypted.substring(0, 16));
-                updateData.put(EXPIRATION_KEY_DATE, System.currentTimeMillis() + 60 * 60 * 1000);
+                updateData.put(SESSION_ID, user + SLASH + enrypted.substring(0, SESSION_ID_SUBSTRING_LENGTH));
+                updateData.put(EXPIRATION_KEY_DATE, System.currentTimeMillis() + MILLISECONDS_HOUR);
 
                 writeUserSystemData(user, updateData);
             } else {
@@ -103,7 +103,7 @@ public class Server {
         String sessionId = (String) message.get(SESSION_ID);
 
         String userName = sessionId.split(SLASH)[0];
-        String fileName = "files/" + userName + SLASH + message.get("fileName");
+        String fileName = PATH_FILES + userName + SLASH + message.get("fileName");
 
         Map<String, Object> response = new HashMap<>();
         if (compareSessionId(userName, sessionId)) {
@@ -176,7 +176,7 @@ public class Server {
 
     private static Map<String, Object> readUserSystemData(String user) {
         try {
-            byte[] file = Files.readAllBytes(Paths.get("files/" + user + "/system_info/_info"));
+            byte[] file = Files.readAllBytes(Paths.get(PATH_FILES + user + PATH_SYSTEM_INFO));
             Map<String, Object> map = new HashMap<>();
             map = MessageUtils.getGson().fromJson(new String(file), map.getClass());
             return map;
@@ -189,7 +189,7 @@ public class Server {
     private static void writeUserSystemData(String user, Map<String, Object> data) {
         try {
             String jsonData = MessageUtils.getGson().toJson(data, data.getClass());
-            Files.write(Paths.get("files/" + user + "/system_info/_info"), jsonData.getBytes());
+            Files.write(Paths.get(PATH_FILES + user + PATH_SYSTEM_INFO), jsonData.getBytes());
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
