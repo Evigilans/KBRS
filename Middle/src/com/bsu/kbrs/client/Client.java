@@ -126,11 +126,12 @@ public class Client {
         return null;
     }
 
-    private static Map<String, Object> createHelloRequestPayload(final String fileName) {
+    private static Map<String, Object> createAuthRequestPayload(final String login, final String password) {
         Map<String, Object> request = new HashMap<>();
-        request.put("type", "hello");
+        request.put("type", "aith");
         request.put("rsa-key", publicKey.toString());
-        request.put("fileName", fileName);
+        request.put("user", login);
+        request.put("password", password);
 
         return request;
     }
@@ -171,16 +172,24 @@ public class Client {
         }
 
         String requestedFile = null;
-        System.out.println("Please enter requestedFile");
-        Scanner scanner = new Scanner(System.in);
-        while (requestedFile == null) {
-            requestedFile = scanner.nextLine();
+        String login = null;
+        String password = null;
+
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Login:");
+            while (login == null) {
+                login = scanner.next();
+            }
+            System.out.println("Введите пароль");
+            while (password == null) {
+                password = scanner.next();
+            }
         }
-        System.out.println("Requesting file " + requestedFile);
+//        System.out.println("Requesting file " + requestedFile);
 
-        Map<String, Object> helloPayload = createHelloRequestPayload(requestedFile);
+        Map<String, Object> helloPayload = createAuthRequestPayload(login, password);
         Map<String, Object> response = sendRequest(helloPayload);
-
+        System.out.println(MessageUtils.getGson().toJson(response));
     }
 
 }

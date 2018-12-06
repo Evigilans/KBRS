@@ -10,6 +10,7 @@ Request:
 {
   "type": "auth",
   "user": "user1",
+  "password": "ffff",
   "rsa-key": "xxxx"
 }
 ```

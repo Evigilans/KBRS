@@ -34,4 +34,7 @@ public class MessageUtils {
         return (Map<String, Object>) gson.fromJson(json, map.getClass());
     }
 
+    public static Gson getGson() {
+        return gson;
+    }
 }
