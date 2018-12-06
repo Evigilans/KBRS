@@ -89,7 +89,9 @@ public class Client {
     private static void markRsaKeySent() {
         Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
         try {
-            Files.createFile(sentPath);
+            if (!Files.exists(sentPath)) {
+                Files.createFile(sentPath);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
