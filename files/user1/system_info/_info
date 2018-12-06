@@ -1,3 +1,5 @@
 {
-    "password":"qwerty123"
+    "password":"qwerty123",
+    "secureKey"="sdfgdsfgdgbdsfdfgdsfg",
+    "sessionId"="user1/52515755535452544852505155555150"
 }
