@@ -6,8 +6,9 @@ import com.bsu.kbrs.serpent.FileEncryptor;
 import com.bsu.kbrs.utils.ApplicationUtils;
 import com.bsu.kbrs.utils.MessageUtils;
 
-import java.io.*;
-import java.math.BigInteger;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -52,14 +53,21 @@ public class Server {
         Map<String, Object> response = new HashMap<>();
         response.put("type", "auth");
         if (authenticate(user, password)) {
-            response.put("status", "OK");
-
             RSAEncryption rsaEncryption = new RSAEncryption();
             rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
 
-            BigInteger enrypted = rsaEncryption.encrypt(ApplicationUtils.generateRandomKey(32));
+            String secureKey = ApplicationUtils.generateRandomKey(32);
+            String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
-            response.put("encryption_key", enrypted.toString());
+            response.put("status", "OK");
+            response.put("encryption_key", enrypted);
+
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("password", password);
+            updateData.put("secureKey", secureKey);
+            updateData.put("sessionId", user + "/" + enrypted.substring(0, 32));
+
+            writeUserSystemData(user, updateData);
         } else {
             response.put("status", "FAIL");
             response.put("failureReason", "user or password is not valid");
@@ -81,8 +89,10 @@ public class Server {
             String secureKey = readSecureKey(userName);
             byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
+            System.out.println(encryptedFile);
+
             response.put("status", "OK");
-            response.put("content", encryptedFile);
+            response.put("content", new String(Base64.encodeBase64(encryptedFile)));
         } else {
             response.put("status", "FAIL");
             response.put("failureReason", "File not found");
@@ -132,5 +142,14 @@ public class Server {
             System.out.println(e.getMessage());
         }
         return null;
+    }
+
+    private static void writeUserSystemData(String user, Map<String, Object> data) {
+        try {
+            String jsonData = MessageUtils.getGson().toJson(data, data.getClass());
+            Files.write(Paths.get("files/" + user + "/system_info/_info"), jsonData.getBytes());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }

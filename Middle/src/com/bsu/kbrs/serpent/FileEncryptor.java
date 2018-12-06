@@ -12,9 +12,6 @@ public class FileEncryptor {
 
     public byte[] encryptFile(String filename, String secureKey) {
         try {
-            System.out.println(filename);
-            System.out.println("files/user1/homework");
-
             File inputFile = new File(filename);
             byte[] fileData = new byte[(int) inputFile.length()];
             DataInputStream inputStream = new DataInputStream((new FileInputStream(inputFile)));
@@ -44,6 +41,9 @@ public class FileEncryptor {
 
                 System.arraycopy(block, 0, encryptedBytes, i, block.length);
             }
+
+            System.out.println(encryptedBytes.length);
+            System.out.println(encryptedBytes);
             return encryptedBytes;
         } catch (IOException e) {
             e.printStackTrace();
