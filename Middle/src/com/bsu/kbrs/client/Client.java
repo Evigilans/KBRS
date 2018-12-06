@@ -24,9 +24,6 @@ import org.apache.commons.codec.binary.Base64;
 public class Client {
 
     private static final String NEW_KEYS_PARAM = "--new-keys";
-    private static final String PUBLIC_KEY_FILE_NAME = "public";
-    private static final String PRIVATE_KEY_FILE_NAME = "private";
-    private static final String RSA_KEYS_SENT_FILE = "rsa_sent";
 
     private static String USAGE = "Client options: \n" +
             NEW_KEYS_PARAM + " - generates a new pair of rsa keys\n" +
@@ -34,7 +31,7 @@ public class Client {
             "java -jar client.jar [HOSTNAME][:PORT]\n" +
             "defaults:\n" +
             "HOSTNAME - localhost\n" +
-            "PORT - 9090";
+            "PORT - " + SystemConfigurationConstant.SOCKET_PORT;
 
     private static RSAKey privateKey;
     private static RSAKey publicKey;
@@ -59,7 +56,7 @@ public class Client {
             }
         }
 
-        Path privateFile = Paths.get(rsaDirectory.toString(), PRIVATE_KEY_FILE_NAME);
+        Path privateFile = Paths.get(rsaDirectory.toString(), SystemConfigurationConstant.PRIVATE_KEY_FILE_NAME);
         try {
             Files.write(privateFile,
                     Collections.singletonList(rsaGenerator.getPrivateKey().toString()));
@@ -67,7 +64,7 @@ public class Client {
             e.printStackTrace();
         }
 
-        Path publicFile = Paths.get(rsaDirectory.toString(), PUBLIC_KEY_FILE_NAME);
+        Path publicFile = Paths.get(rsaDirectory.toString(), SystemConfigurationConstant.PUBLIC_KEY_FILE_NAME);
         try {
             Files.write(publicFile,
                     Collections.singletonList(rsaGenerator.getPublicKey().toString()));
@@ -84,12 +81,12 @@ public class Client {
     }
 
     private static boolean isRsaKeySent() {
-        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), SystemConfigurationConstant.RSA_KEYS_SENT_FILE);
         return Files.exists(sentPath);
     }
 
     private static void markRsaKeySent() {
-        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), SystemConfigurationConstant.RSA_KEYS_SENT_FILE);
         try {
             if (!Files.exists(sentPath)) {
                 Files.createFile(sentPath);
@@ -100,7 +97,7 @@ public class Client {
     }
 
     private static void markRsaKeyNotSent() {
-        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), SystemConfigurationConstant.RSA_KEYS_SENT_FILE);
         try {
             Files.deleteIfExists(sentPath);
         } catch (IOException e) {
@@ -110,8 +107,8 @@ public class Client {
 
     private static boolean readUpKeys() {
         Path rsaDirectory = getRsaKeyDirectory();
-        Path privateFile = Paths.get(rsaDirectory.toString(), PRIVATE_KEY_FILE_NAME);
-        Path publicFile = Paths.get(rsaDirectory.toString(), PUBLIC_KEY_FILE_NAME);
+        Path privateFile = Paths.get(rsaDirectory.toString(), SystemConfigurationConstant.PRIVATE_KEY_FILE_NAME);
+        Path publicFile = Paths.get(rsaDirectory.toString(), SystemConfigurationConstant.PUBLIC_KEY_FILE_NAME);
 
         try {
             String privateKeyString = new String(Files.readAllBytes(privateFile));
@@ -208,7 +205,7 @@ public class Client {
             port = pair[1];
         } else {
             hostname = hostNamePort;
-            port = "9090";
+            port = String.valueOf(SystemConfigurationConstant.SOCKET_PORT);
         }
 
 
