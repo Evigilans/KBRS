@@ -3,7 +3,7 @@ package com.bsu.kbrs.serpent;
 import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
-import com.bsu.kbrs.util.ApplicationUtils;
+import com.bsu.kbrs.utils.ApplicationUtils;
 
 import java.math.BigInteger;
 

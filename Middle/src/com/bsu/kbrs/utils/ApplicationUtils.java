@@ -1,4 +1,4 @@
-package com.bsu.kbrs.util;
+package com.bsu.kbrs.utils;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

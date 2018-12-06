@@ -1,6 +1,6 @@
 package com.bsu.kbrs.serpent;
 
-import com.bsu.kbrs.util.ApplicationUtils;
+import com.bsu.kbrs.utils.ApplicationUtils;
 import edu.rit.util.Packing;
 
 import java.io.*;
@@ -12,6 +12,9 @@ public class FileEncryptor {
 
     public byte[] encryptFile(String filename, String secureKey) {
         try {
+            System.out.println(filename);
+            System.out.println("files/user1/homework");
+
             File inputFile = new File(filename);
             byte[] fileData = new byte[(int) inputFile.length()];
             DataInputStream inputStream = new DataInputStream((new FileInputStream(inputFile)));
