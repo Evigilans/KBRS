@@ -14,9 +14,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,33 +49,50 @@ public class Server {
     private static Map<String, Object> loginUser(Map<String, Object> message) {
         String user = (String) message.get("user");
         String password = (String) message.get("password");
-        String rsaKey = (String) message.get("rsa-key");
+
 
         Map<String, Object> response = new HashMap<>();
         response.put("type", "auth");
         if (authenticate(user, password)) {
-            RSAEncryption rsaEncryption = new RSAEncryption();
-            rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
+            String rsaKey = findRSAKey(message);
 
-            String secureKey = ApplicationUtils.generateRandomKey(32);
-            String enrypted = rsaEncryption.encrypt(secureKey).toString();
+            if (rsaKey != null && !rsaKey.isEmpty()) {
+                RSAEncryption rsaEncryption = new RSAEncryption();
+                rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
 
-            response.put("status", "OK");
-            response.put("encryption_key", enrypted);
+                String secureKey = ApplicationUtils.generateRandomKey(32);
+                String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
-            Map<String, Object> updateData = new HashMap<>();
-            updateData.put("password", password);
-            updateData.put("secureKey", secureKey);
-            updateData.put("sessionId", user + "/" + enrypted.substring(0, 16));
-            updateData.put("expirationKeyDate", System.currentTimeMillis() + 60 * 60 * 1000);
+                response.put("status", "OK");
+                response.put("encryption_key", enrypted);
 
-            writeUserSystemData(user, updateData);
+                Map<String, Object> updateData = new HashMap<>();
+                updateData.put("password", password);
+                updateData.put("secureKey", secureKey);
+                updateData.put("RSAKey", rsaEncryption.getPublicKey().toString());
+                updateData.put("sessionId", user + "/" + enrypted.substring(0, 16));
+                updateData.put("expirationKeyDate", System.currentTimeMillis() + 60 * 60 * 1000);
+
+                writeUserSystemData(user, updateData);
+            } else {
+                response.put("status", "FAIL");
+                response.put("failureReason", "RSA not found!");
+            }
         } else {
             response.put("status", "FAIL");
             response.put("failureReason", "user or password is not valid");
         }
 
         return response;
+    }
+
+    private static String findRSAKey(Map<String, Object> message) {
+        String rsaKey = (String) message.get("rsa-key");
+        if (rsaKey == null || rsaKey.isEmpty()) {
+            return readRSAKey((String) message.get("user"));
+        } else {
+            return rsaKey;
+        }
     }
 
     private static Map<String, Object> returnFile(Map<String, Object> message) {
@@ -116,6 +130,14 @@ public class Server {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
             return (String) map.get("secureKey");
+        }
+        return null;
+    }
+
+    private static String readRSAKey(String user) {
+        Map<String, Object> map = readUserSystemData(user);
+        if (map != null) {
+            return (String) map.get("RSAKey");
         }
         return null;
     }
