@@ -5,6 +5,8 @@ Client-Server communication protocol contains only 1 request.
 
 ## Request 1
 
+Rsa key could be ommited.
+
 Request:
 ```json
 {
@@ -20,7 +22,8 @@ Successful Response:
 {
   "type": "auth",
   "status": "OK",
-  "encryption_key": "yyyy""zzzz"
+  "encryption_key": "yyyy",
+  "rsa-key": "xxx"
 }
 ```
 "encryption_key" is a session key encrypted with rsa public key
@@ -33,6 +36,16 @@ Fail Response:
   "failureReason": "user or password is not valid"
 }
 ```
+
+Fail Response:
+```json
+{
+  "type": "auth",
+  "status": "FAIL",
+  "failureReason": "RSA not found!"
+}
+```
+
 ### Request 2:
 
 get the file
@@ -42,7 +55,7 @@ Client Request:
 {
     "type": "getFile",
     "fileName": "xyz.txt",
-    "sessionId": "zzzz"
+    "sessionId": "user/zzzz"
 }
 ```
 sessionId is a first 16 characters of rsa-encrypted encryption key
