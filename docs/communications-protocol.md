@@ -67,7 +67,7 @@ Successful Response:
     "content": "%encrypted_file%"
 }
 ```
-"content" is encrypted using AES session key.
+"content" is encrypted using Serpent session key.
 
 File not found response
 ```json
@@ -75,5 +75,13 @@ File not found response
     "type": "getFile",
     "status": "FAIL",
     "failureReason": "File not found"
+}
+```
+Session key is expired response
+```json
+{
+    "type": "getFile",
+    "status": "FAIL",
+    "failureReason": "Session key is expired"
 }
 ```

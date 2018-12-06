@@ -14,6 +14,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -67,6 +70,7 @@ public class Server {
             updateData.put("password", password);
             updateData.put("secureKey", secureKey);
             updateData.put("sessionId", user + "/" + enrypted.substring(0, 16));
+            updateData.put("expirationKeyDate", System.currentTimeMillis() + 60 * 60 * 1000);
 
             writeUserSystemData(user, updateData);
         } else {
@@ -85,11 +89,16 @@ public class Server {
 
         Map<String, Object> response = new HashMap<>();
         if (compareSessionId(userName, sessionId)) {
-            String secureKey = readSecureKey(userName);
-            byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
+            if (keyNotExpired(userName)) {
+                String secureKey = readSecureKey(userName);
+                byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
-            response.put("status", "OK");
-            response.put("content", new String(Base64.encodeBase64(encryptedFile)));
+                response.put("status", "OK");
+                response.put("content", new String(Base64.encodeBase64(encryptedFile)));
+            } else {
+                response.put("status", "FAIL");
+                response.put("failureReason", "Session key is expired");
+            }
         } else {
             response.put("status", "FAIL");
             response.put("failureReason", "File not found");
@@ -116,6 +125,16 @@ public class Server {
         if (map != null) {
             String fileSessionId = (String) map.get("sessionId");
             return fileSessionId != null && fileSessionId.equals(sessionId);
+        }
+        return false;
+    }
+
+    private static boolean keyNotExpired(String user) {
+        Map<String, Object> map = readUserSystemData(user);
+        if (map != null) {
+            double expirationKeyDate = (double) map.get("expirationKeyDate");
+            long longExpirationKeyDate = (long) expirationKeyDate;
+            return longExpirationKeyDate > System.currentTimeMillis();
         }
         return false;
     }
