@@ -87,7 +87,7 @@ public class Client {
             privateKey = RSAKey.fromString(privateKeyString);
             publicKey = RSAKey.fromString(publicKeyString);
         } catch (IOException e) {
-            e.printStackTrace();
+            // ignore exception
         }
 
         return privateKey != null && publicKey != null;
@@ -136,6 +136,15 @@ public class Client {
         return request;
     }
 
+    private static Map<String, Object> createGetFilePayload(final String file, final String sessionId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getFile");
+        request.put("fileName", file);
+        request.put("sessionId", sessionId);
+
+        return request;
+    }
+
     public static void main(String[] args) {
         if (args.length > 0 && (args[0].equals("--help") || args[0].equals("-h"))) {
             System.out.println(USAGE);
@@ -171,7 +180,6 @@ public class Client {
             generateNewKeys();
         }
 
-        String requestedFile = null;
         String login = null;
         String password = null;
 
@@ -184,12 +192,38 @@ public class Client {
             while (password == null) {
                 password = scanner.next();
             }
-        }
-//        System.out.println("Requesting file " + requestedFile);
 
-        Map<String, Object> helloPayload = createAuthRequestPayload(login, password);
-        Map<String, Object> response = sendRequest(helloPayload);
-        System.out.println(MessageUtils.getGson().toJson(response));
+            Map<String, Object> helloPayload = createAuthRequestPayload(login, password);
+            Map<String, Object> response = sendRequest(helloPayload);
+
+            if (response != null) {
+                final String status = (String) response.get("status");
+                final String encryptedKey = (String) response.get("encryption_key");
+
+                final String sessionId = login + "/" + encryptedKey.chars()
+                        .limit(16)
+                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                        .toString();
+
+                if (status != null && status.equals("OK")) {
+                    while (true) {
+                        String requestedFile = scanner.next();
+                        System.out.println("Requesting file " + requestedFile);
+                        Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
+                        sendRequest(getFilePayload);
+                    }
+                } else {
+                    String failureReason = (String) response.get("failureReason");
+                    if (failureReason != null) {
+                        System.out.println("ERROR: " + failureReason);
+                    } else {
+                        System.out.println("Unrecognized ERROR!");
+                    }
+                }
+            } else {
+                System.out.println("Unrecognized ERROR!");
+            }
+        }
     }
 
 }

@@ -22,8 +22,7 @@ Successful Response:
 {
   "type": "auth",
   "status": "OK",
-  "encryption_key": "yyyy",
-  "rsa-key": "xxx"
+  "encryption_key": "yyyy"
 }
 ```
 "encryption_key" is a session key encrypted with rsa public key
