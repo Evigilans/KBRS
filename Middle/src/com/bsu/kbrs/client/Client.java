@@ -6,8 +6,10 @@ import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.serpent.ByteDecryptor;
 import com.bsu.kbrs.utils.MessageUtils;
 
+import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
@@ -22,6 +24,7 @@ public class Client {
     private static final String NEW_KEYS_PARAM = "--new-keys";
     private static final String PUBLIC_KEY_FILE_NAME = "public";
     private static final String PRIVATE_KEY_FILE_NAME = "private";
+    private static final String RSA_KEYS_SENT_FILE = "rsa_sent";
 
     private static String USAGE = "Client options: \n" +
             NEW_KEYS_PARAM + " - generates a new pair of rsa keys\n" +
@@ -70,10 +73,35 @@ public class Client {
             e.printStackTrace();
         }
 
+        markRsaKeyNotSent();
+
         privateKey = rsaGenerator.getPrivateKey();
         publicKey = rsaGenerator.getPublicKey();
 
         System.out.println("new keys generated");
+    }
+
+    private static boolean isRsaKeySent() {
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        return Files.exists(sentPath);
+    }
+
+    private static void markRsaKeySent() {
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        try {
+            Files.createFile(sentPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void markRsaKeyNotSent() {
+        Path sentPath = Paths.get(getRsaKeyDirectory().toString(), RSA_KEYS_SENT_FILE);
+        try {
+            Files.deleteIfExists(sentPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static boolean readUpKeys() {
@@ -130,7 +158,9 @@ public class Client {
     private static Map<String, Object> createAuthRequestPayload(final String login, final String password) {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "auth");
-        request.put("rsa-key", publicKey.toString());
+        if (!isRsaKeySent()) {
+            request.put("rsa-key", publicKey.toString());
+        }
         request.put("user", login);
         request.put("password", password);
 
@@ -149,6 +179,7 @@ public class Client {
     public static void main(String[] args) {
         if (args.length > 0 && (args[0].equals("--help") || args[0].equals("-h"))) {
             System.out.println(USAGE);
+            return;
         }
 
         boolean isNewKeyPram = false;
@@ -194,41 +225,87 @@ public class Client {
                 password = scanner.next();
             }
 
-            Map<String, Object> helloPayload = createAuthRequestPayload(login, password);
-            Map<String, Object> response = sendRequest(helloPayload);
-
-            if (response != null) {
-                final String status = (String) response.get("status");
+            mainLoop(scanner, login, password);
+        }
+    }
 
 
-                if (status != null && status.equals("OK")) {
-                    final String encryptedKey = (String) response.get("encryption_key");
+    private static void mainLoop(Scanner scanner, String login, String password) {
+        Map<String, Object> helloPayload = createAuthRequestPayload(login, password);
+        Map<String, Object> response = sendRequest(helloPayload);
 
-                    final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
-                    System.out.println(decryptedKey);
+        if (response != null) {
+            String status = (String) response.get("status");
 
-                    final String sessionId = login + "/" + encryptedKey.substring(0, 16);
-                    System.out.println("Please enter fileName.");
-                    while (true) {
-                        String requestedFile = scanner.next();
-                        System.out.println("Requesting file " + requestedFile);
-                        Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
-                        Map<String, Object> getFileResponse = sendRequest(getFilePayload);
-                        System.out.println(MessageUtils.getGson().toJson(getFileResponse));
-                        byte[] fileEncryptedContent = Base64.decodeBase64(((String)getFileResponse.get("content")).getBytes());
-                        System.out.println(new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey));
-                    }
-                } else {
-                    String failureReason = (String) response.get("failureReason");
-                    if (failureReason != null) {
-                        System.out.println("ERROR: " + failureReason);
+            final String failure = (String) response.get("failureReason");
+            if (status != null && status.equals("FAIL")
+                    && failure != null && failure.equals("RSA not found!")) {
+                markRsaKeyNotSent();
+                helloPayload = createAuthRequestPayload(login, password);
+                response = sendRequest(helloPayload);
+
+                status = (String) response.get("status");
+            }
+
+            if (status != null && status.equals("OK")) {
+                markRsaKeySent();
+                final String encryptedKey = (String) response.get("encryption_key");
+
+                final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
+
+                final String sessionId = login + "/" + encryptedKey.substring(0, 16);
+                System.out.println("Please enter fileName.");
+                while (true) {
+                    String requestedFile = scanner.next();
+                    System.out.println("Requesting file " + requestedFile);
+                    Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
+                    Map<String, Object> getFileResponse = sendRequest(getFilePayload);
+                    System.out.println(MessageUtils.getGson().toJson(getFileResponse));
+
+                    if (getFileResponse != null) {
+                        final String getFileStatus = (String) getFileResponse.get("status");
+                        if (getFileStatus != null && getFileStatus.equals("OK")) {
+                            byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
+                            String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey);
+                            openText(decryptedFileContent);
+                        } else {
+                            handleGenericError(response);
+                        }
                     } else {
                         System.out.println("Unrecognized ERROR!");
                     }
                 }
             } else {
-                System.out.println("Unrecognized ERROR!");
+                handleGenericError(response);
             }
+        } else {
+            System.out.println("Unrecognized ERROR!");
+        }
+    }
+
+    private static void openText(final String content) {
+        try {
+            File file = File.createTempFile("kbrs", "kbrs");
+            Files.write(Paths.get(file.toURI()), content.getBytes());
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().edit(file);
+            } else {
+                System.out.println("File content");
+                System.out.println(content);
+            }
+            file.deleteOnExit();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void handleGenericError(Map<String, Object> pResponse) {
+        final String failureReason = (String) pResponse.get("failureReason");
+        if (failureReason != null) {
+            System.out.println("ERROR: " + failureReason);
+        } else {
+            System.out.println("Unrecognized ERROR!");
         }
     }
 
