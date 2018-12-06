@@ -285,7 +285,7 @@ public class Client {
 
     private static void openText(final String content) {
         try {
-            File file = File.createTempFile("kbrs", "kbrs");
+            File file = File.createTempFile("kbrs", ".txt");
             Files.write(Paths.get(file.toURI()), content.getBytes());
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().edit(file);
