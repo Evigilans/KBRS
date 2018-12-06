@@ -128,7 +128,7 @@ public class Client {
 
     private static Map<String, Object> createAuthRequestPayload(final String login, final String password) {
         Map<String, Object> request = new HashMap<>();
-        request.put("type", "aith");
+        request.put("type", "auth");
         request.put("rsa-key", publicKey.toString());
         request.put("user", login);
         request.put("password", password);
@@ -180,7 +180,7 @@ public class Client {
             while (login == null) {
                 login = scanner.next();
             }
-            System.out.println("Введите пароль");
+            System.out.println("Pass:");
             while (password == null) {
                 password = scanner.next();
             }
