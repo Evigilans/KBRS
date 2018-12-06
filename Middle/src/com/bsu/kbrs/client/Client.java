@@ -1,20 +1,21 @@
 package com.bsu.kbrs.client;
 
+import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
+import com.bsu.kbrs.serpent.ByteDecryptor;
 import com.bsu.kbrs.utils.MessageUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import org.apache.commons.codec.binary.Base64;
 
 public class Client {
 
@@ -203,13 +204,19 @@ public class Client {
                 if (status != null && status.equals("OK")) {
                     final String encryptedKey = (String) response.get("encryption_key");
 
+                    final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
+                    System.out.println(decryptedKey);
+
                     final String sessionId = login + "/" + encryptedKey.substring(0, 16);
+                    System.out.println("Please enter fileName.");
                     while (true) {
                         String requestedFile = scanner.next();
                         System.out.println("Requesting file " + requestedFile);
                         Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
                         Map<String, Object> getFileResponse = sendRequest(getFilePayload);
                         System.out.println(MessageUtils.getGson().toJson(getFileResponse));
+                        byte[] fileEncryptedContent = Base64.decodeBase64(((String)getFileResponse.get("content")).getBytes());
+                        System.out.println(new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey));
                     }
                 } else {
                     String failureReason = (String) response.get("failureReason");
