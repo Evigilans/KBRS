@@ -266,7 +266,13 @@ public class Client {
 
                     if (getFileResponse != null) {
                         final String getFileStatus = (String) getFileResponse.get("status");
-                        if (getFileStatus != null && getFileStatus.equals("OK")) {
+                        final String getFileFailure = (String) getFileResponse.get("failureReason");
+                        if (getFileStatus != null && getFileStatus.equals("FAIL") &&
+                            getFileFailure != null && getFileFailure.equals("Session key is expired")) {
+
+                            System.out.println("Session is expired. Please login again.");
+                            System.exit(0);
+                        } else if (getFileStatus != null && getFileStatus.equals("OK")) {
                             byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
                             String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey);
                             openText(decryptedFileContent);
