@@ -158,21 +158,21 @@ public class Client {
 
     private static Map<String, Object> createAuthRequestPayload(final String login, final String password) {
         Map<String, Object> request = new HashMap<>();
-        request.put("type", "auth");
+        request.put(FieldConstant.TYPE, FieldConstant.AUTH);
         if (!isRsaKeySent()) {
-            request.put("rsa-key", publicKey.toString());
+            request.put(FieldConstant.RSA_KEY, publicKey.toString());
         }
-        request.put("user", login);
-        request.put("password", password);
+        request.put(FieldConstant.USER, login);
+        request.put(FieldConstant.PASSWORD, password);
 
         return request;
     }
 
     private static Map<String, Object> createGetFilePayload(final String file, final String sessionId) {
         Map<String, Object> request = new HashMap<>();
-        request.put("type", "getFile");
+        request.put(FieldConstant.TYPE, FieldConstant.GET_FILE);
         request.put("fileName", file);
-        request.put("sessionId", sessionId);
+        request.put(FieldConstant.SESSION_ID, sessionId);
 
         return request;
     }
@@ -236,21 +236,21 @@ public class Client {
         Map<String, Object> response = sendRequest(helloPayload);
 
         if (response != null) {
-            String status = (String) response.get(FieldConstant.JSON_STATUS);
+            String status = (String) response.get(FieldConstant.STATUS);
 
-            final String failure = (String) response.get("failureReason");
-            if (status != null && status.equals("FAIL")
+            final String failure = (String) response.get(FieldConstant.FAILURE_REASON);
+            if (status != null && status.equals(FieldConstant.STATUS_FAIL)
                     && failure != null && failure.equals("RSA not found!")) {
                 markRsaKeyNotSent();
                 helloPayload = createAuthRequestPayload(login, password);
                 response = sendRequest(helloPayload);
 
-                status = (String) response.get("status");
+                status = (String) response.get(FieldConstant.STATUS);
             }
 
-            if (status != null && status.equals("OK")) {
+            if (status != null && status.equals(FieldConstant.STATUS_OK)) {
                 markRsaKeySent();
-                final String encryptedKey = (String) response.get("encryption_key");
+                final String encryptedKey = (String) response.get(FieldConstant.ENCRYPTION_KEY);
 
                 final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
 
@@ -264,14 +264,14 @@ public class Client {
                     System.out.println(MessageUtils.getGson().toJson(getFileResponse));
 
                     if (getFileResponse != null) {
-                        final String getFileStatus = (String) getFileResponse.get("status");
-                        final String getFileFailure = (String) getFileResponse.get("failureReason");
-                        if (getFileStatus != null && getFileStatus.equals("FAIL") &&
+                        final String getFileStatus = (String) getFileResponse.get(FieldConstant.STATUS);
+                        final String getFileFailure = (String) getFileResponse.get(FieldConstant.FAILURE_REASON);
+                        if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_FAIL) &&
                             getFileFailure != null && getFileFailure.equals("Session key is expired")) {
 
                             System.out.println("Session is expired. Please login again.");
                             System.exit(0);
-                        } else if (getFileStatus != null && getFileStatus.equals("OK")) {
+                        } else if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_OK)) {
                             byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
                             String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey);
                             openText(decryptedFileContent);
@@ -308,7 +308,7 @@ public class Client {
     }
 
     private static void handleGenericError(Map<String, Object> pResponse) {
-        final String failureReason = (String) pResponse.get("failureReason");
+        final String failureReason = (String) pResponse.get(FieldConstant.FAILURE_REASON);
         if (failureReason != null) {
             System.out.println("ERROR: " + failureReason);
         } else {
