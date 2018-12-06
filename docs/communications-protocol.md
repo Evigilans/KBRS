@@ -20,8 +20,7 @@ Successful Response:
 {
   "type": "auth",
   "status": "OK",
-  "encryption_key": "yyyy",
-  "sessionId": "zzzz"
+  "encryption_key": "yyyy""zzzz"
 }
 ```
 "encryption_key" is a session key encrypted with rsa public key
@@ -46,6 +45,7 @@ Client Request:
     "sessionId": "zzzz"
 }
 ```
+sessionId is a first 16 characters of rsa-encrypted encryption key
 
 Successful Response:
 ```json
