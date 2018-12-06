@@ -5,6 +5,7 @@ import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.serpent.FileEncryptor;
 import com.bsu.kbrs.utils.ApplicationUtils;
 import com.bsu.kbrs.utils.MessageUtils;
+import org.apache.commons.codec.binary.Base64;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -89,7 +90,7 @@ public class Server {
             String secureKey = readSecureKey(userName);
             byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
-            System.out.println(encryptedFile);
+            System.out.println(new String(Base64.encodeBase64(encryptedFile)));
 
             response.put("status", "OK");
             response.put("content", new String(Base64.encodeBase64(encryptedFile)));
