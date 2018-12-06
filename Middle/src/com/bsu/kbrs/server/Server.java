@@ -1,5 +1,6 @@
 package com.bsu.kbrs.server;
 
+import com.bsu.kbrs.constant.FieldConstant;
 import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.serpent.FileEncryptor;
@@ -17,8 +18,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.bsu.kbrs.constant.SystemConfigurationConstant.*;
 import static com.bsu.kbrs.constant.FieldConstant.*;
-import static com.bsu.kbrs.constant.SystemConfigurationConstant.SOCKET_PORT;
 
 public class Server {
     public static void main(String[] args) {
@@ -31,12 +32,12 @@ public class Server {
                 Map<String, Object> message = MessageUtils.readMessage(inputStream);
                 Map<String, Object> response = new HashMap<>();
 
-                String type = (String) message.get("type");
+                String type = (String) message.get(TYPE);
                 System.out.println(type);
-                if (type.equals("auth")) {
+                if (type.equals(AUTH)) {
                     response = loginUser(message);
                 }
-                if (type.equals("getFile")) {
+                if (type.equals(GET_FILE)) {
                     response = returnFile(message);
                 }
 
@@ -50,12 +51,12 @@ public class Server {
     }
 
     private static Map<String, Object> loginUser(Map<String, Object> message) {
-        String user = (String) message.get("user");
-        String password = (String) message.get("password");
+        String user = (String) message.get(USER);
+        String password = (String) message.get(PASSWORD);
 
 
         Map<String, Object> response = new HashMap<>();
-        response.put("type", "auth");
+        response.put(TYPE, AUTH);
         if (authenticate(user, password)) {
             String rsaKey = findRSAKey(message);
 
@@ -66,24 +67,24 @@ public class Server {
                 String secureKey = ApplicationUtils.generateRandomKey(32);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
-                response.put(JSON_STATUS, JSON_STATUS_OK);
-                response.put("encryption_key", enrypted);
+                response.put(STATUS, STATUS_OK);
+                response.put(ENCRYPTION_KEY, enrypted);
 
                 Map<String, Object> updateData = new HashMap<>();
-                updateData.put("password", password);
-                updateData.put("secureKey", secureKey);
-                updateData.put("RSAKey", rsaEncryption.getPublicKey().toString());
-                updateData.put("sessionId", user + "/" + enrypted.substring(0, 16));
-                updateData.put("expirationKeyDate", System.currentTimeMillis() + 60 * 60 * 1000);
+                updateData.put(PASSWORD, password);
+                updateData.put(SECURE_KEY, secureKey);
+                updateData.put(RSA_KEY, rsaEncryption.getPublicKey().toString());
+                updateData.put(SESSION_ID, user + SLASH + enrypted.substring(0, 16));
+                updateData.put(EXPIRATION_KEY_DATE, System.currentTimeMillis() + 60 * 60 * 1000);
 
                 writeUserSystemData(user, updateData);
             } else {
-                response.put(JSON_STATUS, JSON_STATUS_FAIL);
-                response.put("failureReason", "RSA not found!");
+                response.put(STATUS, FieldConstant.STATUS_FAIL);
+                response.put(FAILURE_REASON, "RSA not found!");
             }
         } else {
-            response.put(JSON_STATUS, JSON_STATUS_FAIL);
-            response.put("failureReason", "user or password is not valid");
+            response.put(STATUS, FieldConstant.STATUS_FAIL);
+            response.put(FAILURE_REASON, "user or password is not valid");
         }
 
         return response;
@@ -92,17 +93,17 @@ public class Server {
     private static String findRSAKey(Map<String, Object> message) {
         String rsaKey = (String) message.get("rsa-key");
         if (rsaKey == null || rsaKey.isEmpty()) {
-            return readRSAKey((String) message.get("user"));
+            return readRSAKey((String) message.get(USER));
         } else {
             return rsaKey;
         }
     }
 
     private static Map<String, Object> returnFile(Map<String, Object> message) {
-        String sessionId = (String) message.get("sessionId");
+        String sessionId = (String) message.get(SESSION_ID);
 
-        String userName = sessionId.split("/")[0];
-        String fileName = "files/" + userName + "/" + message.get("fileName");
+        String userName = sessionId.split(SLASH)[0];
+        String fileName = "files/" + userName + SLASH + message.get("fileName");
 
         Map<String, Object> response = new HashMap<>();
         if (compareSessionId(userName, sessionId)) {
@@ -110,15 +111,15 @@ public class Server {
                 String secureKey = readSecureKey(userName);
                 byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
-                response.put(JSON_STATUS, JSON_STATUS_OK);
-                response.put("content", new String(Base64.encodeBase64(encryptedFile)));
+                response.put(STATUS, STATUS_OK);
+                response.put(CONTENT, new String(Base64.encodeBase64(encryptedFile)));
             } else {
-                response.put(JSON_STATUS, JSON_STATUS_FAIL);
-                response.put("failureReason", "Session key is expired");
+                response.put(STATUS, FieldConstant.STATUS_FAIL);
+                response.put(FAILURE_REASON, "Session key is expired");
             }
         } else {
-            response.put(JSON_STATUS, JSON_STATUS_FAIL);
-            response.put("failureReason", "File not found");
+            response.put(STATUS, FieldConstant.STATUS_FAIL);
+            response.put(FAILURE_REASON, "File not found");
         }
 
         return response;
@@ -132,7 +133,7 @@ public class Server {
     private static String readSecureKey(String user) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            return (String) map.get("secureKey");
+            return (String) map.get(SECURE_KEY);
         }
         return null;
     }
@@ -140,7 +141,7 @@ public class Server {
     private static String readRSAKey(String user) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            return (String) map.get("RSAKey");
+            return (String) map.get(RSA_KEY);
         }
         return null;
     }
@@ -148,7 +149,7 @@ public class Server {
     private static boolean compareSessionId(String user, String sessionId) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            String fileSessionId = (String) map.get("sessionId");
+            String fileSessionId = (String) map.get(SESSION_ID);
             return fileSessionId != null && fileSessionId.equals(sessionId);
         }
         return false;
@@ -157,7 +158,7 @@ public class Server {
     private static boolean keyNotExpired(String user) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            double expirationKeyDate = (double) map.get("expirationKeyDate");
+            double expirationKeyDate = (double) map.get(EXPIRATION_KEY_DATE);
             long longExpirationKeyDate = (long) expirationKeyDate;
             return longExpirationKeyDate > System.currentTimeMillis();
         }
@@ -167,7 +168,7 @@ public class Server {
     private static boolean authenticate(String user, String password) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            String filePassword = (String) map.get("password");
+            String filePassword = (String) map.get(PASSWORD);
             return filePassword != null && filePassword.equals(password);
         }
         return false;
