@@ -17,10 +17,13 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.bsu.kbrs.constant.FieldConstant.*;
+import static com.bsu.kbrs.constant.SystemConfigurationConstant.SOCKET_PORT;
+
 public class Server {
     public static void main(String[] args) {
         try {
-            ServerSocket serverSocket = new ServerSocket(9090);
+            ServerSocket serverSocket = new ServerSocket(SOCKET_PORT);
             while (true) {
                 Socket socket = serverSocket.accept();
                 DataInputStream inputStream = new DataInputStream(socket.getInputStream());
@@ -63,7 +66,7 @@ public class Server {
                 String secureKey = ApplicationUtils.generateRandomKey(32);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
-                response.put("status", "OK");
+                response.put(JSON_STATUS, JSON_STATUS_OK);
                 response.put("encryption_key", enrypted);
 
                 Map<String, Object> updateData = new HashMap<>();
@@ -75,11 +78,11 @@ public class Server {
 
                 writeUserSystemData(user, updateData);
             } else {
-                response.put("status", "FAIL");
+                response.put(JSON_STATUS, JSON_STATUS_FAIL);
                 response.put("failureReason", "RSA not found!");
             }
         } else {
-            response.put("status", "FAIL");
+            response.put(JSON_STATUS, JSON_STATUS_FAIL);
             response.put("failureReason", "user or password is not valid");
         }
 
@@ -107,14 +110,14 @@ public class Server {
                 String secureKey = readSecureKey(userName);
                 byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
-                response.put("status", "OK");
+                response.put(JSON_STATUS, JSON_STATUS_OK);
                 response.put("content", new String(Base64.encodeBase64(encryptedFile)));
             } else {
-                response.put("status", "FAIL");
+                response.put(JSON_STATUS, JSON_STATUS_FAIL);
                 response.put("failureReason", "Session key is expired");
             }
         } else {
-            response.put("status", "FAIL");
+            response.put(JSON_STATUS, JSON_STATUS_FAIL);
             response.put("failureReason", "File not found");
         }
 
