@@ -66,7 +66,7 @@ public class Server {
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("password", password);
             updateData.put("secureKey", secureKey);
-            updateData.put("sessionId", user + "/" + enrypted.substring(0, 32));
+            updateData.put("sessionId", user + "/" + enrypted.substring(0, 16));
 
             writeUserSystemData(user, updateData);
         } else {
@@ -79,18 +79,14 @@ public class Server {
 
     private static Map<String, Object> returnFile(Map<String, Object> message) {
         String sessionId = (String) message.get("sessionId");
-        System.out.println(sessionId);
 
         String userName = sessionId.split("/")[0];
         String fileName = "files/" + userName + "/" + message.get("fileName");
 
         Map<String, Object> response = new HashMap<>();
-
-        if (compareSessionId(userName, sessionId) || 1 == 1) {
+        if (compareSessionId(userName, sessionId)) {
             String secureKey = readSecureKey(userName);
             byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
-
-            System.out.println(new String(Base64.encodeBase64(encryptedFile)));
 
             response.put("status", "OK");
             response.put("content", new String(Base64.encodeBase64(encryptedFile)));

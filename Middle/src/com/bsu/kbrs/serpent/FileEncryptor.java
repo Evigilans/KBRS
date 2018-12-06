@@ -18,7 +18,6 @@ public class FileEncryptor {
             inputStream.readFully(fileData);
             inputStream.close();
 
-            System.out.println("Secret key: " + secureKey);
             byte[] key = secureKey.getBytes();
             serpent.setKey(key);
 
@@ -42,8 +41,6 @@ public class FileEncryptor {
                 System.arraycopy(block, 0, encryptedBytes, i, block.length);
             }
 
-            System.out.println(encryptedBytes.length);
-            System.out.println(encryptedBytes);
             return encryptedBytes;
         } catch (IOException e) {
             e.printStackTrace();
