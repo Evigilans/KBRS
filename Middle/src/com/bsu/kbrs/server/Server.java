@@ -64,21 +64,19 @@ public class Server {
             String rsaKey = findRSAKey(message);
 
             if (rsaKey != null && !rsaKey.isEmpty()) {
-                Map<String, Object> updateData = new HashMap<>();
-
                 RSAEncryption rsaEncryption = new RSAEncryption();
                 rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
 
                 String secureKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
-                if (!isUserHasStorageKey(user)) {
-                    String storageKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
-                    String encryptedStorageKey = rsaEncryption.encrypt(storageKey).toString();
-                    response.put(STORAGE_KEY, encryptedStorageKey);
-                    updateData.put(STORAGE_KEY, storageKey);
-                    System.out.println(storageKey);
+                String storageKey = readUserStorageKey(user);
+                if (storageKey == null) {
+                    storageKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
                 }
+                String encryptedStorageKey = rsaEncryption.encrypt(storageKey).toString();
+                response.put(STORAGE_KEY, encryptedStorageKey);
+                System.out.println("storageKey: " + storageKey);
 
                 String sessionId = generateRandomString();
                 SessionPair sessionPair = new SessionPair(user, System.currentTimeMillis() + MILLISECONDS_HOUR);
@@ -88,8 +86,10 @@ public class Server {
                 response.put(ENCRYPTION_KEY, enrypted);
                 response.put(SESSION_ID, rsaEncryption.encrypt(sessionId).toString());
 
+                Map<String, Object> updateData = new HashMap<>();
                 updateData.put(PASSWORD, password);
                 updateData.put(SECURE_KEY, secureKey);
+                updateData.put(STORAGE_KEY, storageKey);
                 updateData.put(RSA_KEY, rsaEncryption.getPublicKey().toString());
 
                 writeUserSystemData(user, updateData);
@@ -105,12 +105,12 @@ public class Server {
         return response;
     }
 
-    private static boolean isUserHasStorageKey(String user) {
+    private static String readUserStorageKey(String user) {
         Map<String, Object> map = readUserSystemData(user);
         if (map != null) {
-            return map.get(STORAGE_KEY) != null;
+            return (String) map.get(STORAGE_KEY);
         }
-        return false;
+        return null;
     }
 
     private static String generateRandomString() {
