@@ -3,12 +3,22 @@ package com.bsu.kbrs.serpent;
 import com.bsu.kbrs.utils.ApplicationUtils;
 import edu.rit.util.Packing;
 
+import java.io.*;
+
 public class FileEncryptor {
     private static final int BLOCK_SIZE = 16;
 
     private Serpent serpent = new Serpent();
 
+    private byte[] encrypt(byte[] fileData, String secureKey) {
+        return getBytes(fileData, secureKey);
+    }
+
     public byte[] encryptFile(byte[] fileData, String secureKey) {
+        return getBytes(fileData, secureKey);
+    }
+
+    private byte[] getBytes(byte[] fileData, String secureKey) {
         byte[] key = secureKey.getBytes();
         serpent.setKey(key);
 
@@ -34,4 +44,28 @@ public class FileEncryptor {
 
         return encryptedBytes;
     }
+
+    public byte[] encryptFile(String filename, String secureKey) {
+        DataInputStream inputStream = null;
+        try {
+            File inputFile = new File(filename);
+            byte[] fileData = new byte[(int) inputFile.length()];
+            inputStream = new DataInputStream((new FileInputStream(inputFile)));
+            inputStream.readFully(fileData);
+            return encrypt(fileData, secureKey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+
 }
