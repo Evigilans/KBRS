@@ -129,7 +129,7 @@ public class Server {
 
         Map<String, Object> response = new HashMap<>();
         if (userName != null) {
-            if (keyNotExpired(userName)) {
+            if (keyNotExpired(sessionId)) {
                 String secureKey = readSecureKey(userName);
                 byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
@@ -168,14 +168,8 @@ public class Server {
         return null;
     }
 
-    private static boolean keyNotExpired(String user) {
-        Map<String, Object> map = readUserSystemData(user);
-        if (map != null) {
-            double expirationKeyDate = (double) map.get(EXPIRATION_KEY_DATE);
-            long longExpirationKeyDate = (long) expirationKeyDate;
-            return longExpirationKeyDate > System.currentTimeMillis();
-        }
-        return false;
+    private static boolean keyNotExpired(String sessionId) {
+        return sessions.get(sessionId).getExpirationDate() > System.currentTimeMillis();
     }
 
     private static boolean authenticate(String user, String password) {
