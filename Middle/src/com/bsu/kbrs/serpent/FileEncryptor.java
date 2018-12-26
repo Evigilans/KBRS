@@ -10,7 +10,7 @@ public class FileEncryptor {
 
     private Serpent serpent = new Serpent();
 
-    private byte[] encrypt(byte[] fileData, String secureKey) {
+    public byte[] encrypt(byte[] fileData, String secureKey) {
         return getBytes(fileData, secureKey);
     }
 
