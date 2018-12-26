@@ -253,12 +253,16 @@ public class Client {
 
             if (status != null && status.equals(FieldConstant.STATUS_OK)) {
                 markRsaKeySent();
+
+                final RSAEncryption rsaEncryption = new RSAEncryption(publicKey, privateKey);
+
                 final String encryptedKey = (String) response.get(FieldConstant.ENCRYPTION_KEY);
 
-                final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
-                final String sessionId = login + "/" + encryptedKey.substring(0, 16);
+                final String decryptedKey = rsaEncryption.decrypt(new BigInteger(encryptedKey));
+                final String sessionId = rsaEncryption.decrypt(
+                        new BigInteger(((String) response.get(FieldConstant.SESSION_ID))));
 
-                System.out.println("Please enter fileName.");
+                System.out.println("Enter Command");
                 while (true) {
                     String command = scanner.nextLine().trim();
                     if (command.equalsIgnoreCase("getFile")) {
@@ -302,6 +306,8 @@ public class Client {
     }
 
     private static void getFileCommand(final Scanner scanner, final String sessionId, final String decryptSessionKey) {
+        System.out.println("Please enter fileName.");
+
         String requestedFile = scanner.next();
         System.out.println("Requesting file " + requestedFile);
         Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
