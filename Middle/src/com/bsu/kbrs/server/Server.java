@@ -90,7 +90,7 @@ public class Server {
     }
 
     private static String findRSAKey(Map<String, Object> message) {
-        String rsaKey = (String) message.get("rsa-key");
+        String rsaKey = (String) message.get(RSA_KEY);
         if (rsaKey == null || rsaKey.isEmpty()) {
             return readRSAKey((String) message.get(USER));
         } else {
