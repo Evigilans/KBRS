@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 
 public class Client {
 
@@ -163,7 +164,8 @@ public class Client {
             request.put(FieldConstant.RSA_KEY, publicKey.toString());
         }
         request.put(FieldConstant.USER, login);
-        request.put(FieldConstant.PASSWORD, password);
+        request.put(FieldConstant.PASSWORD, DigestUtils.sha1Hex(password));
+        System.out.println(request.get(FieldConstant.PASSWORD));
 
         return request;
     }
