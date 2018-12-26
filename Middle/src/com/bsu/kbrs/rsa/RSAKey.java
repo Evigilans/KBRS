@@ -4,9 +4,6 @@ import java.math.BigInteger;
 
 /**
  * Key class used to store the key's Component and Modulus
- *
- * @author obikag
- * @since 2013-06-22
  */
 public class RSAKey {
 

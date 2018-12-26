@@ -33,9 +33,9 @@ public class Serpent implements BlockCipher {
     }
 
     /**
-     * Set the key for this block cipher. If <TT>key</TT> is an array of bytes
-     * whose length is less than <TT>keySize()</TT>, it will be padded to
-     * <TT>keySize()</TT>
+     * Set the key for this block cipher. If key is an array of bytes
+     * whose length is less than keySize(), it will be padded to
+     * keySize()
      *
      * @param key Key.
      */
@@ -77,11 +77,11 @@ public class Serpent implements BlockCipher {
 
 
     /**
-     * Encrypt the given plaintext. <TT>text</TT> must be an array of bytes
-     * whose length is equal to <TT>blockSize()</TT>. On input, <TT>text</TT>
+     * Encrypt the given plaintext. text must be an array of bytes
+     * whose length is equal to blockSize(). On input, text
      * contains the plaintext block. The plaintext block is encrypted using the
-     * key specified in the most recent call to <TT>setKey()</TT>. On output,
-     * <TT>text</TT> contains the ciphertext block.
+     * key specified in the most recent call to setKey(). On output,
+     * text contains the ciphertext block.
      *
      * @param text Plaintext (on input), ciphertext (on output).
      */
@@ -297,7 +297,7 @@ public class Serpent implements BlockCipher {
             {s0, s1, s2, s3, s4, s5, s6, s7};
 
     /**
-     * Perform S-Box manipulation to the given byte array of <TT>blocksize()</TT> length.
+     * Perform S-Box manipulation to the given byte array of blocksize() length.
      *
      * @param data  Input bit sequence
      * @param round Number of the current round, used to determine which S-Box to use.
@@ -335,7 +335,7 @@ public class Serpent implements BlockCipher {
             {is0, is1, is2, is3, is4, is5, is6, is7};
 
     /**
-     * Perform inverse S-Box manipulation to the given byte array of <TT>blocksize()</TT> length.
+     * Perform inverse S-Box manipulation to the given byte array of blocksize() length.
      *
      * @param data  Input bit sequence
      * @param round Number of the current round, used to determine which inverted S-Box to use.

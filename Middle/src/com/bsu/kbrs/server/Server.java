@@ -54,7 +54,6 @@ public class Server {
         String user = (String) message.get(USER);
         String password = (String) message.get(PASSWORD);
 
-
         Map<String, Object> response = new HashMap<>();
         response.put(TYPE, AUTH);
         if (authenticate(user, password)) {
