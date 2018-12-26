@@ -3,28 +3,29 @@ package com.bsu.kbrs.server;
 import com.bsu.kbrs.constant.FieldConstant;
 import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAKey;
+import com.bsu.kbrs.serpent.ByteDecryptor;
 import com.bsu.kbrs.serpent.FileEncryptor;
 import com.bsu.kbrs.utils.ApplicationUtils;
 import com.bsu.kbrs.utils.MessageUtils;
 import com.bsu.kbrs.utils.SessionPair;
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import static com.bsu.kbrs.constant.FieldConstant.*;
 import static com.bsu.kbrs.constant.SystemConfigurationConstant.*;
 
 public class Server {
-    public static Map<String, SessionPair> sessions = new HashMap<>();
+    private static Map<String, SessionPair> sessions = new HashMap<>();
+    private static byte[] definitelyNotAKey = {115, 117, 112, 101, 114, 115, 101, 99, 114, 101, 116, 107, 101, 121};
 
     public static void main(String[] args) {
         try {
@@ -151,7 +152,7 @@ public class Server {
                 byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
 
                 response.put(STATUS, STATUS_OK);
-                response.put(CONTENT, new String(Base64.encodeBase64(encryptedFile)));
+                response.put(CONTENT, new String(Objects.requireNonNull(Base64.encodeBase64(encryptedFile))));
             } else {
                 response.put(STATUS, FieldConstant.STATUS_FAIL);
                 response.put(FAILURE_REASON, "Session key is expired");
@@ -165,8 +166,23 @@ public class Server {
     }
 
     private static byte[] encryptRequestedFileFile(String fileName, String secureKey) {
-        FileEncryptor fileEncryptor = new FileEncryptor();
-        return fileEncryptor.encryptFile(fileName, secureKey);
+        try {
+            File requestedFile = new File(fileName);
+            byte[] fileData = new byte[(int) requestedFile.length()];
+            DataInputStream dataInputStream = new DataInputStream((new FileInputStream(requestedFile)));
+            dataInputStream.readFully(fileData);
+            dataInputStream.close();
+
+            ByteDecryptor byteDecryptor = new ByteDecryptor();
+            String tempDecryptedValue = byteDecryptor.decryptBytes(fileData, new String(definitelyNotAKey));
+
+            FileEncryptor fileEncryptor = new FileEncryptor();
+            return fileEncryptor.encryptFile(tempDecryptedValue.getBytes(), secureKey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private static String readSecureKey(String user) {
