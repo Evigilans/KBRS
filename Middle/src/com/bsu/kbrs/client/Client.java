@@ -6,6 +6,7 @@ import com.bsu.kbrs.rsa.RSAEncryption;
 import com.bsu.kbrs.rsa.RSAGenerator;
 import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.serpent.ByteDecryptor;
+import com.bsu.kbrs.serpent.FileEncryptor;
 import com.bsu.kbrs.utils.MessageUtils;
 
 import java.awt.*;
@@ -28,7 +29,7 @@ public class Client {
 
     private static final String NEW_KEYS_PARAM = "--new-keys";
 
-    private static String USAGE = "Client options: \n" +
+    private static final String USAGE = "Client options: \n" +
             NEW_KEYS_PARAM + " - generates a new pair of rsa keys\n" +
             "usage:\n" +
             "java -jar client.jar [HOSTNAME][:PORT]\n" +
@@ -262,15 +263,18 @@ public class Client {
                 final String sessionId = rsaEncryption.decrypt(
                         new BigInteger(((String) response.get(FieldConstant.SESSION_ID))));
 
+                final String storageKey = rsaEncryption.decrypt(
+                        new BigInteger((String)response.get(FieldConstant.STORAGE_KEY)));
+
                 System.out.println("Enter Command");
                 while (true) {
                     String command = scanner.nextLine().trim();
                     if (command.equalsIgnoreCase("getFile")) {
-                        getFileCommand(scanner, sessionId, decryptedKey);
+                        getFileCommand(scanner, sessionId, decryptedKey, storageKey);
                     } else if (command.equalsIgnoreCase("ls")) {
                         lsCommand();
                     } else if (command.equalsIgnoreCase("open")) {
-
+                        openLocalFileCommand(scanner, storageKey);
                     }
                 }
             } else {
@@ -281,31 +285,48 @@ public class Client {
         }
     }
 
+    private static void openLocalFileCommand(Scanner scanner, String storageKey) {
+        System.out.println("Please enter fileName.");
+
+        String requestedFile = scanner.next();
+        Path localFilePath = Paths.get(getLocalStorageDirectory().toString(), requestedFile);
+
+        try {
+            byte[] encryptedContent = Files.readAllBytes(localFilePath);
+            String content = new ByteDecryptor().decryptBytes(encryptedContent, storageKey);
+            openText(content);
+        } catch (IOException e) {
+            System.out.println("Cannot open file " + requestedFile);
+        }
+    }
+
     private static Path getLocalStorageDirectory() {
         return Paths.get(System.getProperty("user.home"), ".kbrs_local");
     }
 
     private static void lsCommand() {
         Path localStorageDirectory = getLocalStorageDirectory();
-        if (!Files.exists(localStorageDirectory)) {
-            try {
+        try {
+            if (!Files.exists(localStorageDirectory)) {
                 Files.createDirectories(localStorageDirectory);
-                List<Path> files = Files.list(localStorageDirectory).collect(Collectors.toList());
-                if (files.size() == 0) {
-                    System.out.println("Nothing шы stored locally");
-                } else {
-                    for(Path file : files) {
-                        System.out.println(file.getFileName().toString());
-                    }
-                }
-            } catch (IOException pE) {
-                pE.printStackTrace();
             }
+
+            List<Path> files = Files.list(localStorageDirectory).collect(Collectors.toList());
+            if (files.size() == 0) {
+                System.out.println("Nothing is stored locally");
+            } else {
+                for(Path file : files) {
+                    System.out.println(file.getFileName().toString());
+                }
+            }
+        } catch (IOException pE) {
+            pE.printStackTrace();
         }
 
     }
 
-    private static void getFileCommand(final Scanner scanner, final String sessionId, final String decryptSessionKey) {
+    private static void getFileCommand(final Scanner scanner, final String sessionId,
+                                       final String decryptSessionKey, final String storageKey) {
         System.out.println("Please enter fileName.");
 
         String requestedFile = scanner.next();
@@ -325,12 +346,32 @@ public class Client {
             } else if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_OK)) {
                 byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
                 String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptSessionKey);
+                saveLocalFile(requestedFile, decryptedFileContent, storageKey);
                 openText(decryptedFileContent);
             } else {
                 handleGenericError(getFileResponse);
             }
         } else {
             System.out.println("Unrecognized ERROR!");
+        }
+    }
+
+    private static void saveLocalFile(final String fileName, final String content, final String storageKey) {
+        Path localFilePath = Paths.get(getLocalStorageDirectory().toString(), fileName);
+
+        byte[] fileBytes = new FileEncryptor().encrypt(content.getBytes(), storageKey);
+
+        try {
+            if (!Files.exists(localFilePath)) {
+                if (!Files.exists(localFilePath.getParent())) {
+                    Files.createDirectories(localFilePath.getParent());
+                }
+
+                Files.createFile(localFilePath);
+            }
+            Files.write(localFilePath, fileBytes);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
