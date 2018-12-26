@@ -6,6 +6,7 @@ import com.bsu.kbrs.rsa.RSAKey;
 import com.bsu.kbrs.serpent.FileEncryptor;
 import com.bsu.kbrs.utils.ApplicationUtils;
 import com.bsu.kbrs.utils.MessageUtils;
+import com.bsu.kbrs.utils.SessionPair;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.DataInputStream;
@@ -13,15 +14,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static com.bsu.kbrs.constant.SystemConfigurationConstant.*;
 import static com.bsu.kbrs.constant.FieldConstant.*;
 
 public class Server {
+    public static Map<String, SessionPair> sessions = new HashMap<>();
+
     public static void main(String[] args) {
         try {
             ServerSocket serverSocket = new ServerSocket(SOCKET_PORT);
@@ -66,15 +71,18 @@ public class Server {
                 String secureKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
 
+                String sessionId = generateRandomString();
+                SessionPair sessionPair = new SessionPair(user, System.currentTimeMillis() + MILLISECONDS_HOUR);
+                sessions.put(sessionId, sessionPair);
+
                 response.put(STATUS, STATUS_OK);
                 response.put(ENCRYPTION_KEY, enrypted);
+                response.put(SESSION_ID, rsaEncryption.encrypt(sessionId).toString());
 
                 Map<String, Object> updateData = new HashMap<>();
                 updateData.put(PASSWORD, password);
                 updateData.put(SECURE_KEY, secureKey);
                 updateData.put(RSA_KEY, rsaEncryption.getPublicKey().toString());
-                updateData.put(SESSION_ID, user + SLASH + enrypted.substring(0, SESSION_ID_SUBSTRING_LENGTH));
-                updateData.put(EXPIRATION_KEY_DATE, System.currentTimeMillis() + MILLISECONDS_HOUR);
 
                 writeUserSystemData(user, updateData);
             } else {
@@ -87,6 +95,12 @@ public class Server {
         }
 
         return response;
+    }
+
+    private static String generateRandomString() {
+        byte[] array = new byte[16];
+        new Random().nextBytes(array);
+        return new String(array, Charset.forName("UTF-8"));
     }
 
     private static String findRSAKey(Map<String, Object> message) {
