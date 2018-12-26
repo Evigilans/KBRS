@@ -64,11 +64,21 @@ public class Server {
             String rsaKey = findRSAKey(message);
 
             if (rsaKey != null && !rsaKey.isEmpty()) {
+                Map<String, Object> updateData = new HashMap<>();
+
                 RSAEncryption rsaEncryption = new RSAEncryption();
                 rsaEncryption.setPublicKey(RSAKey.fromString(rsaKey));
 
                 String secureKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
                 String enrypted = rsaEncryption.encrypt(secureKey).toString();
+
+                if (!isUserHasStorageKey(user)) {
+                    String storageKey = ApplicationUtils.generateRandomKey(SESSION_KEY_LENGTH);
+                    String encryptedStorageKey = rsaEncryption.encrypt(storageKey).toString();
+                    response.put(STORAGE_KEY, encryptedStorageKey);
+                    updateData.put(STORAGE_KEY, storageKey);
+                    System.out.println(storageKey);
+                }
 
                 String sessionId = generateRandomString();
                 SessionPair sessionPair = new SessionPair(user, System.currentTimeMillis() + MILLISECONDS_HOUR);
@@ -78,7 +88,6 @@ public class Server {
                 response.put(ENCRYPTION_KEY, enrypted);
                 response.put(SESSION_ID, rsaEncryption.encrypt(sessionId).toString());
 
-                Map<String, Object> updateData = new HashMap<>();
                 updateData.put(PASSWORD, password);
                 updateData.put(SECURE_KEY, secureKey);
                 updateData.put(RSA_KEY, rsaEncryption.getPublicKey().toString());
@@ -94,6 +103,14 @@ public class Server {
         }
 
         return response;
+    }
+
+    private static boolean isUserHasStorageKey(String user) {
+        Map<String, Object> map = readUserSystemData(user);
+        if (map != null) {
+            return map.get(STORAGE_KEY) != null;
+        }
+        return false;
     }
 
     private static String generateRandomString() {
@@ -174,6 +191,9 @@ public class Server {
 
     private static boolean authenticate(String user, String password) {
         Map<String, Object> map = readUserSystemData(user);
+
+        System.out.println(map);
+
         if (map != null) {
             String filePassword = (String) map.get(PASSWORD);
             return filePassword != null && filePassword.equals(password);

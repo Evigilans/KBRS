@@ -8,6 +8,7 @@ public class FieldConstant {
     public static final String SECURE_KEY = "secureKey";
     public static final String RSA_KEY = "RSAKey";
     public static final String SESSION_ID = "sessionId";
+    public static final String STORAGE_KEY = "storageKey";
     public static final String EXPIRATION_KEY_DATE = "expirationKeyDate";
     public static final String SLASH = "/";
     public static final String USER = "user";
