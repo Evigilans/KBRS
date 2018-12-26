@@ -9,10 +9,7 @@ import com.bsu.kbrs.serpent.ByteDecryptor;
 import com.bsu.kbrs.utils.MessageUtils;
 
 import java.awt.*;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -273,6 +270,11 @@ public class Client {
                             System.exit(0);
                         } else if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_OK)) {
                             byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
+                            try {
+                                System.out.println(new String(fileEncryptedContent, "UTF-8"));
+                            } catch (UnsupportedEncodingException e) {
+                                e.printStackTrace();
+                            }
                             String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey);
                             openText(decryptedFileContent);
                         } else {
