@@ -115,7 +115,7 @@ public class Server {
     private static Map<String, Object> returnFile(Map<String, Object> message) {
         String sessionId = (String) message.get(SESSION_ID);
 
-        String userName = sessionId.split(SLASH)[0];
+        String userName = sessions.get(sessionId).getUserId();
         String fileName = PATH_FILES + userName + SLASH + message.get("fileName");
 
         Map<String, Object> response = new HashMap<>();
