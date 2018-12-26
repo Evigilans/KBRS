@@ -14,15 +14,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static com.bsu.kbrs.constant.SystemConfigurationConstant.*;
 import static com.bsu.kbrs.constant.FieldConstant.*;
+import static com.bsu.kbrs.constant.SystemConfigurationConstant.*;
 
 public class Server {
     public static Map<String, SessionPair> sessions = new HashMap<>();
@@ -123,11 +122,13 @@ public class Server {
     private static Map<String, Object> returnFile(Map<String, Object> message) {
         String sessionId = (String) message.get(SESSION_ID);
 
+        System.out.println(sessionId);
+
         String userName = sessions.get(sessionId).getUserId();
         String fileName = PATH_FILES + userName + SLASH + message.get("fileName");
 
         Map<String, Object> response = new HashMap<>();
-        if (compareSessionId(userName, sessionId)) {
+        if (userName != null) {
             if (keyNotExpired(userName)) {
                 String secureKey = readSecureKey(userName);
                 byte[] encryptedFile = encryptRequestedFileFile(fileName, secureKey);
@@ -165,15 +166,6 @@ public class Server {
             return (String) map.get(RSA_KEY);
         }
         return null;
-    }
-
-    private static boolean compareSessionId(String user, String sessionId) {
-        Map<String, Object> map = readUserSystemData(user);
-        if (map != null) {
-            String fileSessionId = (String) map.get(SESSION_ID);
-            return fileSessionId != null && fileSessionId.equals(sessionId);
-        }
-        return false;
     }
 
     private static boolean keyNotExpired(String user) {
