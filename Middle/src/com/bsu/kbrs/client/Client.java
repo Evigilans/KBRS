@@ -12,10 +12,15 @@ import java.awt.*;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -162,7 +167,6 @@ public class Client {
         }
         request.put(FieldConstant.USER, login);
         request.put(FieldConstant.PASSWORD, DigestUtils.sha1Hex(password));
-        System.out.println(request.get(FieldConstant.PASSWORD));
 
         return request;
     }
@@ -252,42 +256,72 @@ public class Client {
                 final String encryptedKey = (String) response.get(FieldConstant.ENCRYPTION_KEY);
 
                 final String decryptedKey = new RSAEncryption(publicKey, privateKey).decrypt(new BigInteger(encryptedKey));
-
                 final String sessionId = login + "/" + encryptedKey.substring(0, 16);
+
                 System.out.println("Please enter fileName.");
                 while (true) {
-                    String requestedFile = scanner.next();
-                    System.out.println("Requesting file " + requestedFile);
-                    Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
-                    Map<String, Object> getFileResponse = sendRequest(getFilePayload);
-                    System.out.println(MessageUtils.getGson().toJson(getFileResponse));
+                    String command = scanner.nextLine().trim();
+                    if (command.equalsIgnoreCase("getFile")) {
+                        getFileCommand(scanner, sessionId, decryptedKey);
+                    } else if (command.equalsIgnoreCase("ls")) {
+                        lsCommand();
+                    } else if (command.equalsIgnoreCase("open")) {
 
-                    if (getFileResponse != null) {
-                        final String getFileStatus = (String) getFileResponse.get(FieldConstant.STATUS);
-                        final String getFileFailure = (String) getFileResponse.get(FieldConstant.FAILURE_REASON);
-                        if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_FAIL) &&
-                            getFileFailure != null && getFileFailure.equals("Session key is expired")) {
-
-                            System.out.println("Session is expired. Please login again.");
-                            System.exit(0);
-                        } else if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_OK)) {
-                            byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
-                            try {
-                                System.out.println(new String(fileEncryptedContent, "UTF-8"));
-                            } catch (UnsupportedEncodingException e) {
-                                e.printStackTrace();
-                            }
-                            String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptedKey);
-                            openText(decryptedFileContent);
-                        } else {
-                            handleGenericError(response);
-                        }
-                    } else {
-                        System.out.println("Unrecognized ERROR!");
                     }
                 }
             } else {
                 handleGenericError(response);
+            }
+        } else {
+            System.out.println("Unrecognized ERROR!");
+        }
+    }
+
+    private static Path getLocalStorageDirectory() {
+        return Paths.get(System.getProperty("user.home"), ".kbrs_local");
+    }
+
+    private static void lsCommand() {
+        Path localStorageDirectory = getLocalStorageDirectory();
+        if (!Files.exists(localStorageDirectory)) {
+            try {
+                Files.createDirectories(localStorageDirectory);
+                List<Path> files = Files.list(localStorageDirectory).collect(Collectors.toList());
+                if (files.size() == 0) {
+                    System.out.println("Nothing шы stored locally");
+                } else {
+                    for(Path file : files) {
+                        System.out.println(file.getFileName().toString());
+                    }
+                }
+            } catch (IOException pE) {
+                pE.printStackTrace();
+            }
+        }
+
+    }
+
+    private static void getFileCommand(final Scanner scanner, final String sessionId, final String decryptSessionKey) {
+        String requestedFile = scanner.next();
+        System.out.println("Requesting file " + requestedFile);
+        Map<String, Object> getFilePayload = createGetFilePayload(requestedFile, sessionId);
+        Map<String, Object> getFileResponse = sendRequest(getFilePayload);
+        System.out.println(MessageUtils.getGson().toJson(getFileResponse));
+
+        if (getFileResponse != null) {
+            final String getFileStatus = (String) getFileResponse.get(FieldConstant.STATUS);
+            final String getFileFailure = (String) getFileResponse.get(FieldConstant.FAILURE_REASON);
+            if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_FAIL) &&
+                    getFileFailure != null && getFileFailure.equals("Session key is expired")) {
+
+                System.out.println("Session is expired. Please login again.");
+                System.exit(0);
+            } else if (getFileStatus != null && getFileStatus.equals(FieldConstant.STATUS_OK)) {
+                byte[] fileEncryptedContent = Base64.decodeBase64(((String) getFileResponse.get("content")).getBytes());
+                String decryptedFileContent = new ByteDecryptor().decryptBytes(fileEncryptedContent, decryptSessionKey);
+                openText(decryptedFileContent);
+            } else {
+                handleGenericError(getFileResponse);
             }
         } else {
             System.out.println("Unrecognized ERROR!");
