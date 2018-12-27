@@ -219,9 +219,12 @@ public class Server {
 
     private static Map<String, Object> readUserSystemData(String user) {
         try {
+            ByteDecryptor byteDecryptor = new ByteDecryptor();
+
             byte[] file = Files.readAllBytes(Paths.get(PATH_FILES + user + PATH_SYSTEM_INFO));
+            String decryptedFile = byteDecryptor.decryptBytes(file, new String(definitelyNotAKey));
             Map<String, Object> map = new HashMap<>();
-            map = MessageUtils.getGson().fromJson(new String(file), map.getClass());
+            map = MessageUtils.getGson().fromJson(decryptedFile, map.getClass());
             return map;
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -231,8 +234,11 @@ public class Server {
 
     private static void writeUserSystemData(String user, Map<String, Object> data) {
         try {
+            FileEncryptor fileEncryptor = new FileEncryptor();
+
             String jsonData = MessageUtils.getGson().toJson(data, data.getClass());
-            Files.write(Paths.get(PATH_FILES + user + PATH_SYSTEM_INFO), jsonData.getBytes());
+            byte[] encryptedFile = fileEncryptor.encryptFile(jsonData.getBytes(), new String(definitelyNotAKey));
+            Files.write(Paths.get(PATH_FILES + user + PATH_SYSTEM_INFO), encryptedFile);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
